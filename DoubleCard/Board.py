@@ -6,7 +6,17 @@ class Board:
         self.__height = height
         self.__board = list()
 
+    def width(self):
+        return self.__width
 
+    def height(self):
+        return self.__height
+
+    def insert(self,x, y, content):
+        self.__board[x][y] = content
+
+    def element(self,x, y):
+        return self.__board[x][y]
 
     def setBoard(self):
         # for c in ascii_uppercase:
@@ -41,10 +51,5 @@ class Board:
                 print(self.__board[i][j], end='|')
             print()
 
+        print(rowSeparator)
 
-
-
-
-board = Board(8,12)
-board.setBoard()
-board.printBoard()

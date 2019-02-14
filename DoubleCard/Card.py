@@ -14,6 +14,19 @@ class Card:
         # right
         self.__rBlock = ''
 
+    def placement(self):
+        return self.__placement
+    def type(self):
+        return self.__type
+    def top(self):
+        return self.__tBlock
+    def bottom(self):
+        return self.__bBlock
+    def left(self):
+        return self.__lBlock
+    def right(self):
+        return self.__rBlock
+
     def setPlacement(self, placement):
         self.__placement = placement
         # type according to rotation
@@ -55,18 +68,12 @@ class Card:
 
 
     def printCard(self):
-        print(self.__placement)
-        print(self.__type)
+        print('\nCard Info: ')
+        print('placement: ', self.__placement)
+        print('type: ', self.__type)
         if self.__type == 'horizontal':
-            print(self.__lBlock)
-            print(self.__rBlock)
+            print('left: ', self.__lBlock)
+            print('right: ', self.__rBlock)
         if self.__type == 'vertical':
-            print(self.__tBlock)
-            print(self.__bBlock)
-
-
-
-
-card = Card()
-card.setPlacement(3)
-card.printCard()
+            print('top: ',self.__tBlock)
+            print('bottom: ',self.__bBlock)
