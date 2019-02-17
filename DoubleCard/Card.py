@@ -1,8 +1,10 @@
+import uuid
 class Card:
 
     #ctor
     def __init__(self):
         #rotation number
+        self.__uid = uuid.uuid4()
         self.__placement = 0
         self.__type = ''
         # top
@@ -27,6 +29,9 @@ class Card:
     def right(self):
         return self.__rBlock
 
+    def id(self):
+        return self.__uid
+
     def setPlacement(self, placement):
         self.__placement = placement
         # type according to rotation
@@ -41,34 +46,35 @@ class Card:
 
     def setBlock(self):
         if self.__placement == 1:
-            self.__lBlock = 'Rf'
-            self.__rBlock = 'We'
+            self.__lBlock = 'R-f'
+            self.__rBlock = 'W-e'
         if self.__placement == 3:
-            self.__lBlock = 'We'
-            self.__rBlock = 'Rf'
+            self.__lBlock = 'W-e'
+            self.__rBlock = 'R-f'
         if self.__placement == 5:
-            self.__lBlock = 'Re'
-            self.__rBlock = 'Wf'
+            self.__lBlock = 'R-e'
+            self.__rBlock = 'W-f'
         if self.__placement == 7:
-            self.__lBlock = 'Wf'
-            self.__rBlock = 'Re'
+            self.__lBlock = 'W-f'
+            self.__rBlock = 'R-e'
         if self.__placement == 2:
-            self.__tBlock = 'Rf'
-            self.__bBlock = 'We'
+            self.__tBlock = 'R-f'
+            self.__bBlock = 'W-e'
         if self.__placement == 4:
-            self.__tBlock = 'We'
-            self.__bBlock = 'Rf'
+            self.__tBlock = 'W-e'
+            self.__bBlock = 'R-f'
         if self.__placement == 6:
-            self.__tBlock = 'Re'
-            self.__bBlock = 'Wf'
+            self.__tBlock = 'R-e'
+            self.__bBlock = 'W-f'
         if self.__placement == 8:
-            self.__tBlock = 'Wf'
-            self.__bBlock = 'Re'
+            self.__tBlock = 'W-f'
+            self.__bBlock = 'R-e'
 
 
 
     def printCard(self):
         print('\nCard Info: ')
+        print('uid: ', self.__uid)
         print('placement: ', self.__placement)
         print('type: ', self.__type)
         if self.__type == 'horizontal':

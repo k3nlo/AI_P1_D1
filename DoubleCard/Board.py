@@ -18,12 +18,27 @@ class Board:
     def element(self,x, y):
         return self.__board[x][y]
 
+    def clearElement(self, x, y):
+        self.__board[x][y] = '___'
+
+    def elementToken(self,type, x, y):
+        if (self.__board[x][y] != '___' and '-' in self.__board[x][y]):
+            tokens = self.__board[x][y].split('-')
+            # print('tokens = ', tokens)
+            if (type =='color'):
+                color = tokens[0]
+                return color
+            elif (type =='dot'):
+                dot = tokens[1]
+                return dot
+        else: return '_'
+
     def setBoard(self):
         # for c in ascii_uppercase:
-        colHeader = ['  ', 'A ', 'B ', 'C ', 'D ', 'E ', 'F ', 'G ', 'H ']
+        colHeader = ['  ', ' A ', ' B ', ' C ', ' D ', ' E ', ' F ', ' G ', ' H ']
         self.__board.append(colHeader)
 
-        blankRow = ['__']*(self.__width)
+        blankRow = ['___']*(self.__width)
 
         rng = range (1 , self.__height+1)
 
@@ -41,7 +56,7 @@ class Board:
         rng_i = reversed(range(len(self.__board)))
         rng_j = range(len(self.__board[0]))
 
-        diplayWidth = (self.__width+1)*3
+        diplayWidth = (self.__width+1)*4
         rowSeparator = '='*diplayWidth
         print(rowSeparator)
         # for each row
