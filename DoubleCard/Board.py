@@ -58,6 +58,7 @@ class Board:
 
         diplayWidth = (self.__width+1)*4
         rowSeparator = '='*diplayWidth
+        print('')
         print(rowSeparator)
         # for each row
         for i in rng_i:
@@ -67,4 +68,5 @@ class Board:
             print()
 
         print(rowSeparator)
+        print('')
 

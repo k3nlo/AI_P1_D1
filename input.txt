@@ -7,7 +7,7 @@
 0 8 G 2 #invalid floating card
 
 
-
+0 3 G 1
 
 
 0 1 A 1
