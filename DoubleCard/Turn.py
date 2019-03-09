@@ -146,7 +146,7 @@ class Turn:
             # usr_input = raw_input('Your regular move: ')
             if self.__count <= self.__reg_limit:
                 print(self.__player.name(), end=' ')
-                usr_input = input('regular move: ')
+                usr_input = input('REGULAR move: ')
 
                 usr_input = str(usr_input).upper()
                 usr_move = usr_input.split()
@@ -165,7 +165,7 @@ class Turn:
 
             elif (self.__count > self.__reg_limit and self.__count <= self.__limit):
                 print(self.__player.name(), end=' ')
-                usr_input = input('recycling move: ')
+                usr_input = input('RECYCLING move: ')
                 usr_input = str(usr_input).upper()
                 usr_move = usr_input.split()
                 if len(usr_move) == 7:
@@ -413,6 +413,7 @@ class Turn:
 
 
     def pickUpCard(self, card, x1, y1, x2, y2):
+        self.__player.addCard()
         picked_up = [ self.__board.element(x1, y1), self.__board.element(x2, y2)]
         self.__board.clearElement(x1, y1)
         self.__board.clearElement(x2, y2)

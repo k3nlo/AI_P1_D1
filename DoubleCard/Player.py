@@ -19,3 +19,5 @@ class Player:
 
     def subtractCard(self):
         self.__cards-=1
+    def addCard(self):
+        self.__cards+=1
