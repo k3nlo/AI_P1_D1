@@ -24,7 +24,7 @@ class Board:
     def elementToken(self,type, x, y):
         if (self.__board[x][y] != '___' and '-' in self.__board[x][y]):
             tokens = self.__board[x][y].split('-')
-            # print('tokens = ', tokens)
+            # print('objectives = ', objectives)
             if (type =='color'):
                 color = tokens[0]
                 return color
