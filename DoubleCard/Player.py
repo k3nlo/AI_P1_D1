@@ -38,19 +38,24 @@ class AIPlayer(Player):
     def depth(self):
         return  self.__depth
 
-    def move(self, alpha_beta, trace, board_state, player, turn):
-        print(player.name(), 'is playing the', player.objective())
+    def move(self, alpha_beta, trace, board_state, player, turn, trace_file):
+        # print(player.name(), 'is playing the', player.objective())
 
         # sleeping for about 1 second makes it looks like he's thinking
         # time.sleep(random.randrange(8, 17, 1)/10.0)
         # return random.randint(0, 6)
 
-        stateSearch = StateSpaceSearch(alpha_beta, trace, board_state, player, turn)
+        stateSearch = StateSpaceSearch(alpha_beta, trace, board_state, player, turn, trace_file)
         # print('Ignore all bots move for now')
         # m.gameIsOver(turn)
         # best_move, value = minimax.bestMove(self.__depth, board_state, self.__objective)
         print('Bot Starting BestMove()')
         # minimax.bestMove(self.__depth, board_state, player.objective())
         best_move, value = stateSearch.bestMove(self.__depth, board_state, player.objective())
-        print('Best Move:', best_move, 'value =', value)
+        # value = stateSearch.bestMove(self.__depth, board_state, player.objective())
+        msg_separator = '=' * 36 + '\n'
+        print(msg_separator)
+        print('BEST MOVE: 0-', best_move, 'value =', value)
+        print(msg_separator)
+        # print('Best value =', value)
         return best_move

@@ -9,23 +9,59 @@
 import copy
 import random
 import time
+import operator
+import uuid
 
 from Card import Card
 from Heuristic import Heuristic
 from DoubleCard.Turn import Turn
 from Move import Move
 
+class GameNode(object):
+    def __init__(self, board, previous_move=None, current_score=None):
+        self.id = uuid.uuid4()
+        self.board = board
+        if previous_move is None:
+            self.previous_move = None
+        else:
+            self.previous_move = previous_move
+        if previous_move is None:
+            self.current_score = None
+        else:
+            self.current_score = current_score
+
+    def getBoard(self):
+        return self.board
+
+    def getMove(self):
+        return self.previous_move
+
+    def getScore(self):
+        return self.current_score
+
+    def getUid(self):
+        return self.id
+
+    def setBoard(self, board):
+        self.board = board
+
+    def setMove(self, previous_move):
+        self.previous_move = previous_move
+
+    def setScore(self, current_score):
+        self.current_score = current_score
 
 class StateSpaceSearch(object):
     """ Minimax object that takes  board state
     """
+    #todo: board_state is simply a board
 
     board = None
 
     # was using tokens x or o , work to be done we have W + R or f + e
     objectives = ['colors', 'dots']
 
-    def __init__(self, alpha_beta, trace, board, player, turn):
+    def __init__(self, alpha_beta, trace, board, player, turn, trace_file=None):
         self.board = copy.deepcopy(board)
         self.row_rng = range(1, self.board.height()+1)
         self.col_rng = range(1, self.board.width()+1)
@@ -34,41 +70,67 @@ class StateSpaceSearch(object):
         self.en_counter = 0
         self.trace = trace
         self.alpha_beta = alpha_beta
-
-    def createOutputFile(self, index):
-        if self.alpha_beta :
-            file_name = 'traceab'+str(index)+'.txt'
+        self.root_depth = player.depth() # TODO: CHANGE SINGLE LEVEL SEARCH
+        if trace_file is None:
+            self.trace_file = None
         else:
-            file_name = 'tracemm'+str(index)+'.txt'
-        text_file = open(file_name, "w")
-        return text_file
+            self.trace_file = trace_file
+
+
+
 
     def bestMove(self, depth, board_state, curr_player_objective):
         start_time = time.time()
-        print('Starting bestMove() for depth = ', depth)
-        # todo: A 1 B 1 4 C 1 for recycling
-        # """ Returns the best move (as a column number) and the associated alpha
-        #     Calls miniMaxSearch()
-        # """        # determine opponent's objective
-        if curr_player_objective == self.objectives[0]:
+        # print('Starting bestMove() for depth = ', depth)
+        if curr_player_objective == self.objectives[0]: # todo: is colors
             player_role = 'max'
+            opponent_role = 'min'
         else:
             player_role = 'min'
+            opponent_role = 'max'
 
         print('Bot role is ', player_role)
 
-        # enumerate all legal moves
-        # hashmap
-        legal_moves = {}  # will map legal move states to their alpha values
+        # store all legal moves in a key/value dictionnary
+        legal_moves = {}  # will map legal move states to their values
 
-
-        # recycling move
-        # list all pickable cards
-        # card history
+        # regular move
         if self.turn.count() <= self.turn.regular_limit():
-            self.bot_regular_move(depth, board_state, legal_moves, player_role)
+            start_time2 = time.time()
 
-        # todo: endless remove card loop (card history/playable cards)
+            self.bot_regular_move(depth, board_state, legal_moves, player_role, opponent_role)
+
+            elapsed_time2 = time.time() - start_time2
+            # print('elapsed time bot regular move: ', elapsed_time2)
+
+            # print('legal_moves = ', legal_moves)
+
+            move_list={}
+
+            # todo: process dictionary content
+            for uid, game_node in legal_moves.items():
+                # print('move = ', game_node.getMove(), 'score =', game_node.getScore())
+                move_list[game_node.getMove()] = game_node.getScore()
+
+            best_value = -99999999
+            best_move = None
+            if (player_role == 'max'):
+                key_max_val = max(move_list, key=move_list.get)  # Just use 'min' instead of 'max' for minimum.
+                best_move = key_max_val
+                best_value = move_list[key_max_val]
+                # print('best_move = ', best_move, 'best_value = ' ,best_value)
+            if (player_role == 'min'):
+                key_min_val = min(move_list, key=move_list.get)  # Just use 'min' instead of 'max' for minimum.
+                print(key_min_val, move_list[key_min_val])
+                best_move = key_min_val
+                best_value = move_list[key_min_val]
+                # print('best_move = ', best_move, 'best_value = ', best_value)
+
+            elapsed_time = time.time() - start_time
+            print('elapsed time for best move: ', elapsed_time)
+
+
+        # FIXME: endless remove card loop for recycling moves (card history/playable cards)
         elif self.turn.count() > self.turn.regular_limit() and self.turn.count() <= self.turn.limit():
 
             playable_cards = []
@@ -95,6 +157,7 @@ class StateSpaceSearch(object):
                             # card is pickable
                             print('adding:', card)
                             playable_cards.append(card)
+                            break;
 
                     elif (card_type == 2 or card_type == 4 or card_type == 6 or card_type == 8):
                         #vertical
@@ -102,88 +165,72 @@ class StateSpaceSearch(object):
                             #card is pickable
                             print('adding:', card)
                             playable_cards.append(card)
+                            break;
 
             print('playable_cards', playable_cards)
-            # self.bot_recycling_move_new(depth, board_state, playable_cards, legal_moves, player_role)
+            self.bot_recycling_move_new(depth, board_state, playable_cards, legal_moves, player_role, opponent_role)
 
-
-
-
-        if (player_role == 'max'):
-            best_value = -99999999
-            best_move = None
-            moves = legal_moves.items()
-            random.shuffle(list(moves))
-            for move, value in moves:
-                if value >= best_value:
-                    best_value = value
-                    best_move = move
-
-        elif(player_role == 'min'):
-            best_value = 99999999
-            best_move = None
-            moves = legal_moves.items()
-            random.shuffle(list(moves))
-            for move, value in moves:
-                if value <= best_value:
-                    best_value = value
-                    best_move = move
-
-        print('legal_moves = ', legal_moves)
-        print('e(n) was run ', self.en_counter)
-        elapsed_time = time.time() - start_time
-        print('elapsed time: ', elapsed_time)
 
         if self.trace:
-            file = self.createOutputFile(self.turn.count())
-            file.write(str(self.en_counter))
-            file.write('\n')
-            file.write(str(best_value))
-            file.write('\n')
-            file.write('\n')
-            en_values = list(legal_moves.values())
-            for value in en_values:
-                file.write(str(value))
-                file.write('\n')
-            # file.write('\n')
-            file.close()
+            if self.alpha_beta:
+                # file_name = 'traceab'+str(index)+'.txt'
+                file_name = 'traceab.txt'
+            else:
+                # file_name = 'tracemm'+str(index)+'.txt'
+                file_name = 'tracemm.txt'
+            # file = self.createOutputFile(self.turn.count())
+            # file = self.createOutputFile()
+            if self.trace_file is None:
+                print('Not tracefile to write to.')
 
+            else:
+                if ((self.turn.count()) == 1 ):
+                    file = open(file_name, "w")
+                else:
+                    file = open(file_name, "a")
+                file.write(str(self.en_counter))
+                file.write('\n')
+                file.write(str(best_value))
+                file.write('\n')
+                file.write('\n')
+                en_values = list(move_list.values())
+                for value in en_values:
+                    file.write(str(value))
+                    file.write('\n')
+                file.write('\n')
+                file.close()
+        # print('best_move = ', best_move, ', best value = ', best_value)
+        # return best_move, best_value
+        # print('e(n) was run ', self.en_counter)
+        # FIXME: RESET COUNTER OF E(N)
+        self.en_counter = 0
         return best_move, best_value
 
-    def bot_regular_move(self,depth, board_state, legal_moves, player_role):
-        # regular move
-        # list all playable cells
-        playable_cells = []
-        for row in self.row_rng:
-            # print('trying row', row)
-            for col in self.col_rng:
-                # print('trying col', col)
-                if (board_state.element(row, col) == '___' and
-                        board_state.element(row - 1, col) != '___'):
-                    playable_cells.append(str(row) + '-' + str(col))
 
-        # print('playable_cells: ', playable_cells)
+    def bot_regular_move(self,depth, board_state, legal_moves, player_role, opponent_role):
+        # ab_legal_moves = []
+        print('Running bot regular move:')
 
-        rotation_rng = range(1, 9)
-        # in each playable cell check all the card rotation to see which one are legal
+        if self.alpha_beta:
+            alpha= -99999999
+            beta= 99999999
+            start_timeab = time.time()
+            gameNode = GameNode(board_state)
+            best_score_ab = self.alphabeta(depth, gameNode, alpha, beta, player_role, legal_moves)
+            print('best alphabeta score = ', best_score_ab)
+            elapsed_timeab = time.time() - start_timeab
+            # print('elapsed time first alphabeta: ', elapsed_timeab)
 
-        for cell in playable_cells:
-            cell_coord = cell.split('-')
-            playable_row = cell_coord[0]
-            playable_col = self.intToColumnLetter(int(cell_coord[1]))
-            # if it is a legal regular move...
-            # if self.turn.count() <= self.turn.regular_limit():
-            for rotation in rotation_rng:
-                move = Move('regular', rotation, playable_col, playable_row)
-                if self.isLegalMove(board_state, move):
-                    # make the move for curr_player
-                    temp = self.makeMove(board_state, move)
-                    # insert in hashmap at [key] = value
-                    key = str(move.placement()) + '-' + move.dCol() + '-' + move.dRow()
-                    # legal_moves[key] = self.miniMaxSearch(depth - 1, temp, player_role)
-                    legal_moves[key] = self.miniMaxSearch(depth - 1, temp, player_role)
+        else:
+            start_time_mm = time.time()
+            gameNode = GameNode(board_state)
+            best_score_mm = self.minimax(depth, gameNode, player_role, legal_moves)
+            elapsed_timemm = time.time() - start_time_mm
+            print('elapsed time first minimax: ', elapsed_timemm)
+            print('best minimax score = ', best_score_mm)
 
-    def bot_recycling_move_new(self, depth, board_state, playable_cards, legal_moves, player_role):
+
+    def bot_recycling_move_new(self, depth, board_state, playable_cards, legal_moves, player_role, opponent_role):
         for playable_card in playable_cards:
             # pick it up the card change the state of the board run bot regular move
             x1 = int(playable_card[2])
@@ -194,8 +241,8 @@ class StateSpaceSearch(object):
             # temporaly remove card
             temp_board = self.temp_remove_card(board_state, x1, y1, x2, y2)
 
-            temp_board.printBoard()
-
+            # temp_board.printBoard()
+            #
             # # play it
             # # regular move
             # # list all playable cells
@@ -230,24 +277,16 @@ class StateSpaceSearch(object):
             #             str_y2 =self.intToColumnLetter(int(y2))
             #             picked_card = str_y1 +'-'+str(x1)+'-'+str_y2+'-'+str(x1)
             #             key = picked_card +'-'+str(move.placement()) + '-' + move.dCol() + '-' + move.dRow()
-            #             # legal_moves[key] = self.miniMaxSearch(depth - 1, temp, player_role)
-            #             legal_moves[key] = self.miniMaxSearch(depth - 1, temp, player_role)
+            #             # legal_moves[key] = self.minimax(depth - 1, temp, player_role)
+            #             legal_moves[key] = self.minimax(depth - 1, temp, player_role)
             # get score
             # in legal moves
             # put it back
 
 
+    def list_next_legal_states (self, game_node, depth, legal_moves):
 
-    def miniMaxSearch(self, depth, board_state, role):
-        # print('Starting miniMaxSearch() at depth = ', depth, 'for', role)
-        # """ Searches the tree at depth 'depth'
-        #     By default, the board_state is the board, and role is whomever
-        #     called this miniMaxSearch
-        #     Returns the alpha value
-        # """
-        # enumerate all legal moves from this board_state of the board
-        legal_moves = []
-
+        legal_states = []
         # regular move
         # list all playable cells
         playable_cells = []
@@ -255,8 +294,8 @@ class StateSpaceSearch(object):
             # print('trying row', row)
             for col in self.col_rng:
                 # print('trying col', col)
-                if (board_state.element(row, col) == '___' and
-                        board_state.element(row - 1, col) != '___'):
+                if (game_node.getBoard().element(row, col) == '___' and
+                        game_node.getBoard().element(row - 1, col) != '___'):
                     playable_cells.append(str(row) + '-' + str(col))
 
         # print('playable_cells: ', playable_cells)
@@ -266,43 +305,75 @@ class StateSpaceSearch(object):
         for cell in playable_cells:
             cell_coord = cell.split('-')
             playable_row = cell_coord[0]
-            playable_col = self.intToColumnLetter(int(cell_coord [1]))
+            playable_col = self.intToColumnLetter(int(cell_coord[1]))
             # if it is a legal regular move...
             if self.turn.count() <= self.turn.regular_limit():
                 for rotation in rotation_rng:
+                    # TODO: SAVE THIS MOVE INFO
                     move = Move('regular', rotation, playable_col, playable_row)
-                    if self.isLegalMove(board_state, move):
+                    move_string = str(move.placement()) + '-' + move.dCol() + '-' + move.dRow()
+
+                    if self.isLegalMove(game_node.getBoard(), move):
                         # make the move in column for curr_player
-                        temp = self.makeMove(board_state, move)
-                        legal_moves.append(temp)
+                        # TODO: STORE THIS BOARD/STATE INFO WITH PREVIOUS MOVE + LV 0 OF BOARD EVALUATION
+                        temp_state = self.makeMove(game_node.getBoard(), move)
+                        new_gameNode = GameNode(temp_state, move_string)
+                        legal_states.append(new_gameNode)
+                        # insert in hashmap at [key] = value
+                        if (depth == self.root_depth):
+                            legal_moves[new_gameNode.getUid()] = new_gameNode
 
+        return legal_states
 
-        # if this node (board_state) is a terminal node or depth == 0...
-        if depth == 0 or len(legal_moves) == 0 or self.gameIsOver(board_state):
+    def minimax(self, depth, game_node, role, legal_moves):
+        if (role == 'max'):
+            objective = 'colors'
+        else:
+            objective = 'dots'
+        # print('Starting minimax() at depth = ', depth, 'for', role, objective)
+        # enumerate all legal moves from this game_node of the board at this level
+        # todo: remove duplicate states
+        # further state from here
+
+        legal_nodes_list = self.list_next_legal_states(game_node, depth, legal_moves)
+        # print('legal moves = ', len(legal_moves))
+        # print('legal moves = ', legal_moves)
+
+        # if this node (game_node) is a terminal node or depth == 0...
+        if depth == 0 or len(legal_nodes_list) == 0 or self.gameIsOver(game_node.getBoard()):
             # return the heuristic value of node
-            if(role == 'max'):
-                objective = 'colors'
-            else:
-                objective = 'dots'
-            return self.value(board_state, objective)
+            score = self.value(game_node.getBoard(), objective)
+            game_node.setScore(score)
+            return score
 
-        # determine opponent's color todo: replace color by tokens (twice)
-            # determine opponent's color /token objective
         if role == 'max':
             opponent_role = 'min'
             value = -99999999
-            for child in legal_moves:
+            for child in legal_nodes_list:
                 if child == None:
-                    print("child == None (miniMaxSearch)")
-                value = max(value, self.miniMaxSearch(depth - 1, child, opponent_role))
+                    print("child == None (minimax)")
+                value = max(value, self.minimax(depth - 1, child, opponent_role, legal_moves))
+
+
+            # TODO: TAKE INTO CONSIDERATION THE SET DEPTH AT START
+            if (depth == (self.root_depth - 1)):
+                game_node.setScore(value)
+                # print('LV_1 returned value role max = ', value)
             return value
+
         elif role == 'min':
             opponent_role = 'max'
             value = 99999999
-            for child in legal_moves:
+            for child in legal_nodes_list:
                 if child == None:
-                    print("child == None (miniMaxSearch)")
-                value = min(value, self.miniMaxSearch(depth - 1, child, opponent_role))
+                    print("child == None (minimax)")
+                value = min(value, self.minimax(depth - 1, child, opponent_role, legal_moves))
+
+
+            # TODO: TAKE INTO CONSIDERATION THE SET DEPTH AT START
+            if (depth == (self.root_depth - 1)):
+                game_node.setScore(value)
+                # print('LV_1 returned value role min = ', value)
             return value
 
 
@@ -337,14 +408,18 @@ class StateSpaceSearch(object):
 
         return move_is_legal
 
-    # done
+
     def gameIsOver(self, state):
         # print('running gameIsOver function')
-        winning = self.turn.winCheck(state, self.player)
+        # winning = self.turn.winCheck(state, self.player)
+        winning = self.turn.silent_winCheck(state, self.player)
         if winning == True or self.turn.count() == self.turn.limit():
             return True
         else:
             return  False
+
+
+
 
     # todo: rework
     def makeMove(self, board_state, move):
@@ -365,12 +440,22 @@ class StateSpaceSearch(object):
 
     # based on implemented heuristic
     def value(self, state, objective):
+
+        # todo: new heuristic
         heuristic = Heuristic(state, objective)
-        score = heuristic.evaluate_score()
+        # score = heuristic.evaluate_score()
+        score = heuristic.evaluate_new_score()
         # print('score:', score)
         self.en_counter += 1
         return score
 
+
+    def notCountedValue(self, state, objective):
+        heuristic = Heuristic(state, objective)
+        score = heuristic.evaluate_score()
+        # print('score:', score)
+        # self.en_counter += 1
+        return score
 
 
     def insert_temp_card(self, board, card, x1, y1, x2, y2):
@@ -381,17 +466,21 @@ class StateSpaceSearch(object):
             self.insert_temp_vert(board, card, x1, y1, x2,
                                     y2)
 
+
     def insert_temp_horiz(self,board, card, x1, y1, x2, y2):
         board.insert(x1, y1, card.left())
         board.insert(x2, y2, card.right())
+
 
     def insert_temp_vert(self, board, card, x1, y1, x2, y2):
         board.insert(x1, y1, card.bottom())
         board.insert(x2, y2, card.top())
 
+
     def intToColumnLetter(self, col_int):
         str = chr(col_int + 64)
         return str
+
 
     def temp_remove_card(self, board, x1, y1, x2, y2):
         temp = copy.deepcopy(board)
@@ -403,22 +492,54 @@ class StateSpaceSearch(object):
         # return picked_up
         return temp
 
-    # def alphabeta(node, depth, alpha, beta, role):
-    #     if depth = 0 or node is a terminal node then
-    #         return the heuristic value of node
-    #     if maximizingPlayer then
-    #         value := −∞
-    #         for each child of node do
-    #             value := max(value, alphabeta(child, depth − 1, α, β, FALSE))
-    #             α := max(α, value)
-    #             if α ≥ β then
-    #                 break (* β cut-off *)
-    #         return value
-    #     else
-    #         value := +∞
-    #         for each child of node do
-    #             value := min(value, alphabeta(child, depth − 1, α, β, TRUE))
-    #             β := min(β, value)
-    #             if α ≥ β then
-    #                 break (* α cut-off *)
-    #         return value
+    def alphabeta(self, depth, game_node, alpha, beta, role, legal_moves):
+        # if (depth == 1):
+        #     print('starting alpha beta with depth = ', depth)
+        if (role == 'max'):
+            objective = 'colors'
+        else:
+            objective = 'dots'
+
+        # todo: remove duplicate states
+        # list all possible move at this state
+        legal_nodes_list = self.list_next_legal_states(game_node, depth, legal_moves)
+
+        if depth == 0 or len(legal_nodes_list) == 0 or self.gameIsOver(game_node.getBoard()):
+            # return the heuristic value of node
+            score = self.value(game_node.getBoard(), objective)
+            game_node.setScore(score)
+            return score
+
+        if role == 'max':
+            opponent_role = 'min'
+            value = -99999999
+
+            for child in legal_nodes_list:
+                if child == None:
+                    print("child == None (alpha beta)")
+                value = max(value, self.alphabeta(depth - 1, child, alpha, beta, opponent_role, legal_moves))
+                alpha = max(alpha, value)
+                if (alpha >= beta):
+                    break
+            #TODO: TAKE INTO CONSIDERATION THE SET DEPTH AT START
+            if (depth == (self.root_depth-1)):
+                game_node.setScore(value)
+                # print('LV_1 returned value role max = ', value)
+            return value
+
+        elif role == 'min':
+            opponent_role = 'max'
+            value = 99999999
+            for child in legal_nodes_list:
+                if child == None:
+                    print("child == None (minimax)")
+                value = min(value, self.alphabeta(depth - 1, child, alpha, beta, opponent_role, legal_moves))
+                beta = min(beta, value)
+                if (alpha >= beta):
+                    break
+
+            # TODO: TAKE INTO CONSIDERATION THE SET DEPTH AT START
+            if (depth == (self.root_depth-1)):
+                game_node.setScore(value)
+                # print('LV_1 returned value role min = ', value)
+            return value

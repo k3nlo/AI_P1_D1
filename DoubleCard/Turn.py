@@ -8,7 +8,7 @@ import warnings
 
 
 class Turn:
-    def __init__(self, alpha_beta, trace, count, reg_limit, limit, board, player, card_history):
+    def __init__(self, alpha_beta, trace, count, reg_limit, limit, board, player, card_history, trace_file = None):
         self.__count = count
         self.__reg_limit = reg_limit
         self.__limit = limit
@@ -18,6 +18,10 @@ class Turn:
         self.__completed = False
         self.trace = trace
         self.alpha_beta = alpha_beta
+        if trace_file is None:
+            self.trace_file = None
+        else:
+            self.trace_file = trace_file
 
     def count(self):
         return self.__count
@@ -51,6 +55,108 @@ class Turn:
 
 
     def winCheck(self, board, player):
+        # print('running wincheck')
+        won = False
+        objective = player.objective()
+        if (objective == 'colors'):
+            # print('checking board for in-line colors')
+            tokenOptions = ['R', 'W']
+            tokenType = 'color'
+        elif (objective == 'dots'):
+            # print('checking board for in-line dots')
+            tokenOptions = ['f', 'e']
+            tokenType = 'dot'
+        for token in tokenOptions:
+            # vertical check
+            # for each row
+            # print('checking vertically')
+            for row in range(1, (board.height()+1)):
+                # if len(str(row)) == 1:
+                #     print('', row, end='|')
+                # else: print(row, end='|')
+
+                for col in range(1, (board.width()+1)):
+                # same row printing
+                #     print(self.__board.elementToken(tokenType, row, col), end='|')
+                    # checking vertical/column win
+                    if (row + 3 <= board.height()):
+                        if (board.elementToken(tokenType, row, col) == token and
+                                board.elementToken(tokenType, row + 1, col) == token and
+                                board.elementToken(tokenType, row + 2, col) == token and
+                                board.elementToken(tokenType, row + 3, col) == token):
+                            print('vertical win')
+                            won = True
+                # print()
+            # print()
+
+            # horizontal check
+            # for each row
+            # print('checking horizontally')
+            for row in range(1, (board.height() + 1)):
+                # if len(str(row)) == 1:
+                #     print('', row, end='|')
+                # else:
+                #     print(row, end='|')
+                for col in range(1, (board.width() + 1)):
+                    # print(self.__board.elementToken(tokenType, row, col), end='|')
+                    # checking horizontal/row win
+                    if (col+3 <= board.width()):
+                        if (board.elementToken(tokenType, row, col) == token and
+                                board.elementToken(tokenType, row, col + 1) == token and
+                                board.elementToken(tokenType, row, col + 2) == token and
+                                board.elementToken(tokenType, row, col + 3) == token):
+                            won = True
+                            print('horizontal win')
+                # print()
+            # print()
+
+            # diagonal check \
+            # for each row
+            # print('checking diagonally')
+            for row in range(1, (board.height() + 1)):
+                # if len(str(row)) == 1:
+                #     print('', row, end='|')
+                # else:
+                #     print(row, end='|')
+                for col in range(1, (board.width() + 1)):
+                    # print(self.__board.elementToken(tokenType, row, col), end='|')
+                    # checking diagonal down right win
+                    if (col + 3 <= board.width() and row+3 <= board.height()):
+                        if (board.elementToken(tokenType, row, col) == token and
+                                board.elementToken(tokenType, row + 1, col + 1) == token and
+                                board.elementToken(tokenType, row + 2, col + 2) == token and
+                                board.elementToken(tokenType, row + 3, col + 3) == token):
+                            won = True
+                            print('diagonal 1 win')
+                # print()
+            # print()
+
+            # diagonal check /
+            # for each row
+            for row in range(1, (board.height() + 1)):
+                for col in range(1, (board.width() + 1)):
+                    # print(self.__board.elementToken(tokenType, row, col), end='|')
+                    # checking diagonal down left win
+                    if (col - 3  >= 1 and row+3 <= board.height()):
+                        if (board.elementToken(tokenType, row, col) == token and
+                                board.elementToken(tokenType, row + 1, col - 1) == token and
+                                board.elementToken(tokenType, row + 2, col - 2) == token and
+                                board.elementToken(tokenType, row + 3, col - 3) == token):
+                            won = True
+                            print('diagonal 2 win')
+            #     print()
+            # print()
+            if (won):
+                print('=' * 45)
+                print('WE HAVE A REAL WINNER : ', player.name(), 'got 4', token, 'in-line!')
+                print('=' * 35)
+                return won
+
+
+
+
+
+    def silent_winCheck(self, board, player):
         # print('running wincheck')
         won = False
         objective = player.objective()
@@ -139,11 +245,14 @@ class Turn:
                             won = True
             #     print()
             # print()
-            if(won):
-                print('='*45)
-                print('WE HAVE A WINNER : ', player.name(), 'got 4', token, 'in-line!')
+            if (won):
+                print('=' * 45)
+                # print('Silent WINNER : ', player.name(), 'got 4', token, 'in-line!')
                 print('=' * 35)
                 return won
+
+
+
 
 
     def start(self):
@@ -151,12 +260,18 @@ class Turn:
         print('It\'s ',self.__player.name(), '\'s turn.', sep = '')
         print(self.__player.name(), ' is playing ', self.__player.objective(),'.', sep = '')
         print('')
-        winning = self.winCheck(self.__board, self.__player)
-        if (winning):
-            return winning
+        # winning = self.winCheck(self.__board, self.__player)
+        # if (winning):
+        #     return winning
         # allowed range of moves
         x_rng = range(1, self.__board.height() + 1)
         y_rng = range(1, self.__board.width() + 1)
+
+        msg_separator = '=' * 36 + '\n'
+        print(msg_separator)
+        print('BOARD AT THE START OF THE TURN')
+        # print(msg_separator)
+        self.__board.printBoard()
 
 
         while self.__completed != True:
@@ -166,7 +281,7 @@ class Turn:
 
                 if (self.__player.type() == 'ai'):
                     # self is an instance of this turn
-                    bot_move = self.__player.move(self.alpha_beta, self.trace, self.__board, self.__player, self)
+                    bot_move = self.__player.move(self.alpha_beta, self.trace, self.__board, self.__player, self, self.trace_file)
                     bot_move_info = bot_move.split('-')
                     move = Move('regular', int(bot_move_info[0]), bot_move_info[1], bot_move_info[2])
 
@@ -189,13 +304,19 @@ class Turn:
                         print(msg_separator)
                         print('INVALID MOVE: check your REGULAR move.')
 
+
+
+            #fixme: recycling move
             elif (self.__count > self.__reg_limit and self.__count <= self.__limit):
 
                 if (self.__player.type() == 'ai'):
                     # self is an instance of this turn
-                    bot_move = self.__player.move(self.alpha_beta, self.trace, self.__board, self.__player, self)
-                    # bot_move_info = bot_move.split('-')
+                    bot_move = self.__player.move(self.alpha_beta, self.trace, self.__board, self.__player, self, self.trace_file )
+                    bot_move_info = bot_move.split('-')
+                    print('recycling move info:', bot_move_info)
+                    print('SORRY, COULDNT FIX THE RECYCLING MOVE IN TIME...')
                     # move = Move('regular', int(bot_move_info[0]), bot_move_info[1], bot_move_info[2])
+                    break
 
                 else:
                     print(self.__player.name(), end=' ')
@@ -244,19 +365,32 @@ class Turn:
                     if (recylingIsValid):
                         self.process_recycling(move, sel_row1, sel_col1, sel_row2, sel_col2)
 
-            self.__board.printBoard()
+            # self.__board.printBoard()
+            #
+            #
+            # print(self.__player.name(), ' cards left: ', self.__player.cards())
+            # print('')
+            # #print('Played cards: ', self.__card_history)
+            # self.printHistory()
+            # print('_'*36)
+            # print('')
 
-
-            print(self.__player.name(), ' cards left: ', self.__player.cards())
-            print('')
-            #print('Played cards: ', self.__card_history)
-            self.printHistory()
-            print('_'*36)
-            print('')
-
-
+            # todo: single test remove
+            # self.__completed = True
             if self.__completed:
                 break
+
+        print(msg_separator)
+        print('BOARD AFTER COMPLETING MOVE')
+        # print(msg_separator)
+        self.__board.printBoard()
+
+        print(self.__player.name(), ' cards left: ', self.__player.cards())
+        print('')
+        # print('Played cards: ', self.__card_history)
+        self.printHistory()
+        print('_' * 36)
+        print('')
          # check for a winner
 
         winning = self.winCheck(self.__board, self.__player)

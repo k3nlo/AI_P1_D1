@@ -16,11 +16,26 @@ class Game:
         if (result):
             self.__hasWinner = result
 
+        # def createOutputFile(self, index):
+
+    def createOutputFile(self, alpha_beta):
+        if alpha_beta:
+            # file_name = 'traceab'+str(index)+'.txt'
+            file_name = 'traceab' + '.txt'
+        else:
+            # file_name = 'tracemm'+str(index)+'.txt'
+            file_name = 'tracemm' + '.txt'
+
+        text_file = open(file_name, "w")
+
+        return text_file
+
     @staticmethod
     def main():
         # game starts here
         players = []
-        max_nb_cards = 2 # also the limit to regular move
+        # max_nb_cards = 2 # also the limit to regular move testing
+        max_nb_cards = 12 # also the limit to regular move
         game = Game(False, max_nb_cards, players)
         objective = ''
         # auto gen for testing
@@ -55,6 +70,12 @@ class Game:
                 trace = False
                 break
 
+        if trace:
+            trace_file = game.createOutputFile(alpha_beta)
+            trace_file.close()
+        else:
+            trace_file = None
+
         ai_turn = 0
         while reply != '1' or reply != '2':
             msg = 'The A.I will be Player 1 or 2 ? (1/2) '
@@ -68,7 +89,9 @@ class Game:
         for i in range(1, 3):
 
             if ai_turn == i:
-                bot = AIPlayer(1, 'Bot', i, max_nb_cards, 'ai')
+                # bot = AIPlayer(2, 'Bot', i, max_nb_cards, 'ai')
+                # bot = AIPlayer(2, 'Bot', i, max_nb_cards, 'ai') #todo: 2 LEVEL DEEP
+                bot = AIPlayer(1, 'Bot', i, max_nb_cards, 'ai') #todo: 1 LEVEL DEEP
                 # print('bot name = ', bot.name())
                 players.append(bot)
 
@@ -81,23 +104,23 @@ class Game:
 
             if i == 1 :
 
-                if ai_turn == i:
-                   random_int = randint(0,20)
-                   if random_int % 2 == 0:
-                       players[i - 1].setObjective('colors')
-                       print('Bot chose colors as objective.')
-                   else:
-                       players[i - 1].setObjective('dots')
-                       print('Bot chose dots as objective.')
-
-                else:
-                    while objective != 'colors' or objective != 'dots':
-                        msg = 'Player ' + str(i) + ' objective (colors or dots): '
-                        usr_input = input(msg)
-                        objective = str(lower(usr_input))
-                        if objective == 'colors' or objective == 'dots':
-                            players[i - 1].setObjective(objective)
-                            break
+                # if ai_turn == i:
+                #    random_int = randint(0,20)
+                #    if random_int % 2 == 0:
+                #        players[i - 1].setObjective('colors')
+                #        print('Bot chose colors as objective.')
+                #    else:
+                #        players[i - 1].setObjective('dots')
+                #        print('Bot chose dots as objective.')
+                #
+                # else:
+                while objective != 'colors' or objective != 'dots':
+                    msg = 'Player ' + str(i) + ' objective (colors or dots): '
+                    usr_input = input(msg)
+                    objective = str(lower(usr_input))
+                    if objective == 'colors' or objective == 'dots':
+                        players[i - 1].setObjective(objective)
+                        break
 
             else:
                 if (players[i-2].objective() == 'colors'): #player 1 at position 0 in list
@@ -116,19 +139,20 @@ class Game:
         played_cards = []
         # print(game.__hasWinner)
         turn_count = 0
-        end_game = 30
+        # end_game = 30
+        end_game = 20
         # regular turns loop
         while game.__hasWinner == False:
             turn_count +=1
             print('Round #',turn_count, sep='')
             print('='*36)
             print('')
-            turnP1 = Turn(alpha_beta, trace, turn_count, max_nb_cards, end_game, brd_1, players[0], played_cards)
+            turnP1 = Turn(alpha_beta, trace, turn_count, max_nb_cards, end_game, brd_1, players[0], played_cards, trace_file)
             turnResult = turnP1.start()
             game.checkResult(turnResult)
             if game.__hasWinner:
                 break
-            turnP2 = Turn(alpha_beta, trace, turn_count, max_nb_cards, end_game, brd_1, players[1], played_cards)
+            turnP2 = Turn(alpha_beta, trace, turn_count, max_nb_cards, end_game, brd_1, players[1], played_cards, trace_file)
             turnResult = turnP2.start()
             game.checkResult(turnResult)
             if game.__hasWinner:
@@ -139,6 +163,5 @@ class Game:
             print('End of Round #', turn_count, sep='')
             print('='*36)
             print('')
-
 # Run the game
 Game.main()
