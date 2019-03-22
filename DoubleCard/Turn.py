@@ -273,6 +273,9 @@ class Turn:
         # print(msg_separator)
         self.__board.printBoard()
 
+        winning = self.winCheck(self.__board, self.__player)
+        if (winning):
+            return winning
 
         while self.__completed != True:
             move = None

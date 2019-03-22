@@ -106,7 +106,7 @@ class Heuristic:
 
         tk2_op_score = 1000*op_fours_tk2 + 100*op_threes_tk2 + 10*op_twos_tk2
 
-        score = 4*tk1_score + 5*tk2_score - 2*tk1_op_score - 1.5*tk2_op_score
+        score = tk1_score + 2*tk2_score - 1.5*tk1_op_score - 2.5*tk2_op_score
 
         return score
 
